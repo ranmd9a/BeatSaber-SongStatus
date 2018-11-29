@@ -1,17 +1,16 @@
 # SongStatus
 A Beat Saber plugin to write currently playing song status to a text file that can be read by programs like OBS.
 
-Writes to status.txt in your Beat Saber folder. Customize the output in statusTemplate.txt
+Writes to songStatus.txt in your Beat Saber UserData folder. Customize the output in songStatusTemplate.txt
 
 ## Available tags
 * {songName} 
 * {songSubName}
 * {authorName}
-* {gamemode}
+* ~~{gamemode}~~ Temporarily removed
 * {difficulty}
 * {beatsPerMinute}
 * {[isNoFail]}
-* {[isMirrored]}
+* {[modifiers]}
 * {notesCount}
 * {obstaclesCount}
-* {environmentName}
