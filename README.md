@@ -7,10 +7,15 @@ Writes to songStatus.txt in your Beat Saber UserData folder. Customize the outpu
 * {songName} 
 * {songSubName}
 * {authorName}
-* ~~{gamemode}~~ Temporarily removed
+* {gamemode}
 * {difficulty}
 * {beatsPerMinute}
 * {[isNoFail]}
 * {[modifiers]}
 * {notesCount}
 * {obstaclesCount}
+* {noteJumpStartBeatOffset}
+
+このかたの Fork。
+https://github.com/OshiHidra/BeatSaber-SongStatus
+
