@@ -81,7 +81,7 @@ namespace SongStatus
 			ClearText();
 		}
 
-		private void GameCoreLoaded()
+		private async void GameCoreLoaded()
 		{
 			// OnApplicationStart() でやったほうがいいかもしれないが、プレイ開始前に変更できるメリットのほうがあると思うのでここで実施。
 			// 1フレームごとに呼ばれる処理でもないのでさほど負荷はないはず。
@@ -126,7 +126,8 @@ namespace SongStatus
 				modsList = modsList.Trim(new char[] { ' ', ',' });
 			}
 
-			string gameplayModeText = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
+			//string gameplayModeText = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
+			string gameplayModeText = diff.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
 			if (isPracticeMode)
 			{
 				float practiceSpeed = gameplayCoreSceneSetupData.practiceSettings.songSpeedMul;
@@ -156,13 +157,16 @@ namespace SongStatus
 			templateText = ReplaceKeyword("modifiers", modsList, keywords, templateText);
 			templateText = ReplaceKeyword("beatsPerMinute",
 				song.beatsPerMinute.ToString(CultureInfo.InvariantCulture), keywords, templateText);
-			templateText = ReplaceKeyword("notesCount",
-				diff.beatmapData.cuttableNotesCount.ToString(CultureInfo.InvariantCulture), keywords, templateText);
-
-			templateText = ReplaceKeyword("obstaclesCount",
-				diff.beatmapData.obstaclesCount.ToString(CultureInfo.InvariantCulture), keywords, templateText);
 
 			PlayerSpecificSettings playerSettings = gameplayCoreSceneSetupData.playerSpecificSettings;
+
+			var beatmapData = await diff.GetBeatmapDataAsync(diff.GetEnvironmentInfo(), playerSettings);
+			templateText = ReplaceKeyword("notesCount",
+				beatmapData.cuttableNotesCount.ToString(CultureInfo.InvariantCulture), keywords, templateText);
+
+			templateText = ReplaceKeyword("obstaclesCount",
+				beatmapData.obstaclesCount.ToString(CultureInfo.InvariantCulture), keywords, templateText);
+
 			// Note Jump Offset
 			string offsetText = "";
 			var noteJumpDurationTypeSettings = playerSettings.noteJumpDurationTypeSettings;

@@ -2,13 +2,13 @@
   "$schema": "https://raw.githubusercontent.com/nike4613/ModSaber-MetadataFileSchema/master/Schema.json",
   "author": "",
   "description": "",
-  "gameVersion": "1.19.0",
+  "gameVersion": "1.20.0",
   "id": "SongStatus",
   "name": "SongStatus",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "dependsOn": {
-    "BS Utils": "^1.11.1",
-    "BSIPA": "^4.2.1"
+    "BS Utils": "^1.12.0",
+    "BSIPA": "^4.2.2"
   },
   "features": []
 }
