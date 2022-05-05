@@ -11,6 +11,8 @@ using UnityEngine.SceneManagement;
 using UnityEngine;
 using IPALogger = IPA.Logging.Logger;
 using BS_Utils.Gameplay;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace SongStatus
 {
@@ -27,7 +29,6 @@ namespace SongStatus
 		private readonly string _defaultTemplate = string.Join(
 			Environment.NewLine,
 			"Playing: {songName} {songSubName} - {authorName}",
-			"Star: {star}",
 			"{gamemode} {difficulty} | BPM: {beatsPerMinute}",
 			"{[isNoFail]} {[modifiers]}");
 
@@ -140,32 +141,44 @@ namespace SongStatus
 					gameplayModeText += " (Practice Mode)";
 				}
 			}
-			var keywords = templateText.Split('{', '}');
+			//var keywords = templateText.Split('{', '}');
 
-			templateText = ReplaceKeyword("songName", song.songName, keywords, templateText);
-			templateText = ReplaceKeyword("songSubName", song.songSubName, keywords, templateText);
-			templateText = ReplaceKeyword("authorName", song.songAuthorName, keywords, templateText);
-			templateText = ReplaceKeyword("levelAuthorName", song.levelAuthorName, keywords, templateText);
-			templateText = ReplaceKeyword("gamemode", gameplayModeText, keywords, templateText);
-			templateText = ReplaceKeyword("difficulty", diff.difficulty.Name(), keywords, templateText);
+			string hash = song.levelID;
+			if (hash.ToLower().StartsWith("custom_level_"))
+			{
+				hash = hash.Substring("custom_level_".Length);
+			}
+			else
+            {
+				hash = "";
+            }
+			templateText = ReplaceKeyword("hash", hash, templateText);
+			templateText = ReplaceKeyword("songName", song.songName, templateText);
+			templateText = ReplaceKeyword("songSubName", song.songSubName, templateText);
+			templateText = ReplaceKeyword("authorName", song.songAuthorName, templateText);
+			templateText = ReplaceKeyword("levelAuthorName", song.levelAuthorName, templateText);
+			templateText = ReplaceKeyword("gamemode", gameplayModeText, templateText);
+			templateText = ReplaceKeyword("difficulty", diff.difficulty.Name(), templateText);
 			if (templateText.Contains("{star}"))
 			{
-				templateText = ReplaceKeyword("star", GetStarDifficulty(song.levelID, diff.difficulty.Name()), keywords, templateText);
+				templateText = ReplaceKeyword("star", GetStarDifficulty(song.levelID, diff.difficulty.Name()), templateText);
 			}
 			templateText = ReplaceKeyword("isNoFail",
-				mods.noFailOn0Energy ? "No Fail" : string.Empty, keywords, templateText);
-			templateText = ReplaceKeyword("modifiers", modsList, keywords, templateText);
+				mods.noFailOn0Energy ? "No Fail" : string.Empty, templateText);
+			templateText = ReplaceKeyword("modifiers", modsList, templateText);
 			templateText = ReplaceKeyword("beatsPerMinute",
-				song.beatsPerMinute.ToString(CultureInfo.InvariantCulture), keywords, templateText);
+				song.beatsPerMinute.ToString(CultureInfo.InvariantCulture), templateText);
+			float njs = diff.noteJumpMovementSpeed;
+			templateText = ReplaceKeyword("noteJumpSpeed", njs.ToString("0.0#"), templateText);
 
 			PlayerSpecificSettings playerSettings = gameplayCoreSceneSetupData.playerSpecificSettings;
 
 			var beatmapData = await diff.GetBeatmapDataAsync(diff.GetEnvironmentInfo(), playerSettings);
 			templateText = ReplaceKeyword("notesCount",
-				beatmapData.cuttableNotesCount.ToString(CultureInfo.InvariantCulture), keywords, templateText);
+				beatmapData.cuttableNotesCount.ToString(CultureInfo.InvariantCulture), templateText);
 
 			templateText = ReplaceKeyword("obstaclesCount",
-				beatmapData.obstaclesCount.ToString(CultureInfo.InvariantCulture), keywords, templateText);
+				beatmapData.obstaclesCount.ToString(CultureInfo.InvariantCulture), templateText);
 
 			// Note Jump Offset
 			string offsetText = "";
@@ -201,7 +214,7 @@ namespace SongStatus
 				var noteJumpFixedDuration = playerSettings.noteJumpFixedDuration;
 				offsetText = noteJumpFixedDuration.ToString() + "s (Static)";
 			}
-			templateText = ReplaceKeyword("noteJumpStartBeatOffset", offsetText, keywords, templateText);
+			templateText = ReplaceKeyword("noteJumpStartBeatOffset", offsetText, templateText);
 
 			Logger.log.Debug(templateText);
 			using (System.IO.StreamWriter streamWriter = new System.IO.StreamWriter(
@@ -210,7 +223,6 @@ namespace SongStatus
 				streamWriter.Write(templateText);
 				streamWriter.Flush();
 			}
-
 		}
 
 		private void ClearText()
@@ -248,6 +260,47 @@ namespace SongStatus
 			return "-";
 		}
 
+		private string ReplaceKeyword(string keyword, string replaceKeyword, string text)
+		{
+			// "{" で始まり "}" で終わる、かつ "{", "}", 改行を含まない文字列を抽出
+			MatchCollection matches = Regex.Matches(text, @"{[^(\r\n{})]+}");
+
+			// keyword を含むものだけさらに抽出
+			bool found = false;
+			var list = new List<Match>();
+			foreach (Match match in matches)
+			{
+				if (match.Value.Contains(keyword))
+				{
+					found = true;
+					list.Add(match);
+				}
+			}
+			// 置換対象がなければそのまま返す
+			if (!found) return text;
+
+			list.Sort((a, b) =>
+			{
+				// 開始位置の逆順ソート
+				return b.Index - a.Index;
+			});
+
+			var sb = new StringBuilder(text);
+			foreach (var item in list)
+			{
+				string replacedValue = string.Empty;
+				if (!string.IsNullOrEmpty(replaceKeyword))
+                {
+					// 抽出した文字列から先頭の "{" と末尾の "}" を除去して keyword 部分を置換
+					replacedValue = item.Value.Substring(1, item.Value.Length - 2).Replace(keyword, replaceKeyword);
+				}
+				// text 置換
+				sb.Remove(item.Index, item.Length).Insert(item.Index, replacedValue);
+			}
+			return sb.ToString();
+		}
+
+		/*
 		private string ReplaceKeyword(string keyword, string replaceKeyword, string[] keywords, string text)
 		{
 			if (!keywords.Any(x => x.Contains(keyword))) return text;
@@ -273,5 +326,6 @@ namespace SongStatus
 
 			return text;
 		}
+		*/
 	}
 }
